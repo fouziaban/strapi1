@@ -42,5 +42,7 @@ jobs:
         echo "Deploying Strapi..."
         ssh -o StrictHostKeyChecking=no -i private_key.pem $EC2_USER@$EC2_HOST << 'EOF'
           cd /home/${{secrets.EC2_USER}}/my-project
-          npm start
+          echo "const strapi = require('@strapi/strapi');
+          strapi().start();" > server.js
+          pm2 start server.js
         EOF
