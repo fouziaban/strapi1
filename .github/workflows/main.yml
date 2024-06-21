@@ -13,16 +13,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '16'
+    # - name: Set up Node.js
+    #   uses: actions/setup-node@v2
+    #   with:
+    #     node-version: '16'
 
-    - name: Install dependencies
-      run: npm install
+    # - name: Install dependencies
+    #   run: npm install
 
-    - name: Build Strapi
-      run: npm run build
+    # - name: Build Strapi
+     # run: npm run build
 
     - name: Deploy to EC2
       env:
@@ -41,6 +41,6 @@ jobs:
 
         echo "Deploying Strapi..."
         ssh -o StrictHostKeyChecking=no -i private_key.pem $EC2_USER@$EC2_HOST << 'EOF'
-          cd /home/${{secrets.EC2_USER}}/strapi1-fb
+          cd /home/${{secrets.EC2_USER}}/my-project
           npm start
         EOF
