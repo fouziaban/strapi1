@@ -29,15 +29,18 @@ jobs:
         EC2_HOST: ${{ secrets.EC2_HOST }}
         EC2_USER: ${{ secrets.EC2_USER }}
         EC2_KEY: ${{ secrets.EC2_KEY }}
-      run: 
+      run: |
         echo "${EC2_KEY}" > private_key.pem
         chmod 600 private_key.pem
 
         echo "Testing SSH connection..."
         ssh -o StrictHostKeyChecking=no -i private_key.pem $EC2_USER@$EC2_HOST "echo 'SSH connection successful.'"
-        scp -i $KEY -r ./* $USER@$HOST:/home/ec2-user/my-project
-        ssh -i $KEY $USER@$HOST << 'EOF'
-          cd /home/ec2-user/my-project
-          npm install --production
-          pm2 restart strapi || pm2 start npm --name "strapi" -- run start
+
+        echo "Transferring files..."
+        scp -o StrictHostKeyChecking=no -i private_key.pem -r ./* $EC2_USER@$EC2_HOST:/home/$EC2_USER/TEMP/
+
+        echo "Deploying Strapi..."
+        ssh -o StrictHostKeyChecking=no -i private_key.pem $EC2_USER@$EC2_HOST << 'EOF'
+          cd /home/${{secrets.EC2_USER}}/strapi1-fb
+          npm start
         EOF
