@@ -37,12 +37,25 @@ jobs:
         ssh -o StrictHostKeyChecking=no -i private_key.pem $EC2_USER@$EC2_HOST "echo 'SSH connection successful.'"
 
         echo "Transferring files..."
-        # scp -o StrictHostKeyChecking=no -i private_key.pem -r ./* $EC2_USER@$EC2_HOST:/home/ubuntu/my-project/
+        scp -o StrictHostKeyChecking=no -i private_key.pem -r ./* $EC2_USER@$EC2_HOST:/home/$EC2_USER/my-project/
 
         echo "Deploying Strapi..."
         ssh -o StrictHostKeyChecking=no -i private_key.pem $EC2_USER@$EC2_HOST << 'EOF'
-          cd /home/${{secrets.EC2_USER}}/my-project
-          echo "const strapi = require('@strapi/strapi');
-          strapi().start();" > server.js
-          pm2 start server.js
+          cd /home/$EC2_USER/my-project
+          
+          # Ensure PM2 is installed
+          if ! command -v pm2 &> /dev/null
+          then
+              echo "PM2 not found, installing..."
+              npm install -g pm2
+          fi
+          
+          # Create or overwrite the server.js file
+          echo "const strapi = require('@strapi/strapi'); strapi().start();" > server.js
+
+          # Start the Strapi application using PM2
+          pm2 start server.js --name strapi-app --update-env
+
+          # Save the PM2 process list and corresponding environment
+          pm2 save
         EOF
