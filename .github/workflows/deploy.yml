@@ -20,21 +20,10 @@ jobs:
           node-version: '18'
 
       - name: Install dependencies
-        run: |
-          echo "Installing dependencies..."
-          yarn install
-          echo "Dependencies installed successfully."
-      - name: Install PM2
-        run: |
-          echo "Installing PM2..."
-          yarn global add pm2
-          echo "PM2 installed successfully."
+        run: npm install
 
-      - name: Run build
-        run: |
-          echo "Running build..."
-          yarn run build
-          echo "Build completed."
+    - name: Build Strapi
+      run: npm run build
 
       # Deploy to EC2 using SSH
       - name: Deploy to EC2
