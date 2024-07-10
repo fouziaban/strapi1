@@ -43,14 +43,14 @@ jobs:
             exec 2>&1
 
             echo "Navigating to project directory"
-            cd /home/ubuntu/my-project
+            cd /home/ubuntu/strapi1
 
             echo "Fixing ownership and permissions"
-            sudo chown -R $USER:$USER /home/ubuntu/my-project
-            sudo chown -R $USER:$USER /home/ubuntu/my-project
+            sudo chown -R $USER:$USER /home/ubuntu/strapi1
+            sudo chown -R $USER:$USER /home/ubuntu/strapi1
 
             echo "Adding exception for safe directory"
-            git config --global --add safe.directory /home/ubuntu/my-project
+            git config --global --add safe.directory /home/ubuntu/strapi1
 
             echo "Pulling latest code from main branch"
             git pull origin main
