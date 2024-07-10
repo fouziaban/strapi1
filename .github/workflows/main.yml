@@ -1,4 +1,4 @@
-name: Deploy Strapi
+name: build-and-deploy
 
 on:
   push:
@@ -6,56 +6,65 @@ on:
       - main
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '16'
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18.x'
 
-    - name: Install dependencies
-      run: npm install
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+       
 
-    - name: Build Strapi
-      run: npm run build
+      - name: Build Strapi project
+        run: npm run build
+        
 
-    - name: Deploy to EC2
-      env:
-        EC2_HOST: ${{ secrets.EC2_HOST }}
-        EC2_USER: ${{ secrets.EC2_USER }}
-        EC2_KEY: ${{ secrets.EC2_KEY }}
-      run: |
-        echo "${EC2_KEY}" > private_key.pem
-        chmod 600 private_key.pem
+      - name: Start SSH agent and add SSH key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-        echo "Testing SSH connection..."
-        ssh -o StrictHostKeyChecking=no -i private_key.pem $EC2_USER@$EC2_HOST "echo 'SSH connection successful.'"
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            exec > >(tee -i /tmp/deploy.log)
+            exec 2>&1
 
-        echo "Transferring files..."
-        # scp -o StrictHostKeyChecking=no -i private_key.pem -r ./* $EC2_USER@$EC2_HOST:/home/$EC2_USER/my-project/
+            echo "Navigating to project directory"
+            cd /home/ubuntu/strapi1
 
-        echo "Deploying Strapi..."
-        ssh -o StrictHostKeyChecking=no -i private_key.pem $EC2_USER@$EC2_HOST << 'EOF'
-          cd /home/$EC2_USER/my-project
-          
-          # Ensure PM2 is installed
-          if ! command -v pm2 &> /dev/null
-          then
-              echo "PM2 not found, installing..."
-              npm install -g pm2
-          fi
-          
-          # Create or overwrite the server.js file
-          echo "const strapi = require('@strapi/strapi'); strapi().start();" > server.js
+            echo "Fixing ownership and permissions"
+            sudo chown -R $USER:$USER /home/ubuntu/strapi1
+            sudo chown -R $USER:$USER /home/ubuntu/strapi1
 
-          # Start the Strapi application using PM2
-          pm2 start server.js --name strapi-app --update-env
+            echo "Adding exception for safe directory"
+            git config --global --add safe.directory /home/ubuntu/strapi1
 
-          # Save the PM2 process list and corresponding environment
-          pm2 save
-        EOF
+            echo "Pulling latest code from main branch"
+            git pull origin main
+
+            echo "Fixing npm permissions"
+            sudo chown -R $USER:$USER ~/.npm
+
+            echo "Installing dependencies"
+            npm install --legacy-peer-deps
+
+            echo "Building the project"
+            npm run build
+
+            echo "Starting or restarting the application with PM2"
+            pm2 start npm --name "strapi-project" -- run start || pm2 restart strapi-project
+
+            echo "Deployment completed"
