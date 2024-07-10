@@ -43,14 +43,14 @@ jobs:
             exec 2>&1
 
             echo "Navigating to project directory"
-            cd /home/ubuntu/strapi1
+            cd /home/ubuntu/my-project
 
             echo "Fixing ownership and permissions"
-            sudo chown -R $USER:$USER /home/ubuntu/strapi1
-            sudo chown -R $USER:$USER /home/ubuntu/strapi1
+            sudo chown -R $USER:$USER /home/ubuntu/my-project
+            sudo chown -R $USER:$USER /home/ubuntu/my-project
 
             echo "Adding exception for safe directory"
-            git config --global --add safe.directory /home/ubuntu/strapi1
+            git config --global --add safe.directory /home/ubuntu/my-project
 
             echo "Pulling latest code from main branch"
             git pull origin main
@@ -59,7 +59,7 @@ jobs:
             sudo chown -R $USER:$USER ~/.npm
 
             echo "Installing dependencies"
-            npm install --legacy-peer-deps
+            npm install
 
             echo "Building the project"
             npm run build
